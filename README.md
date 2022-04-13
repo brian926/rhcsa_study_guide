@@ -1,10 +1,19 @@
 # RHCSA Study Guide
 
 ### Table of Contents
-- [Stdout and Stderr](#stdour-and-stderr)
-- [Bash](#bash)
-- [Compression and Archiving](#compression-and-archiving)
-- [Links](#links)
+* [Stdout and Stderr](#stdour-and-stderr)
+* [Bash](#bash)
+    * [Bash Arguments](#bash-arguments)
+* [Compression and Archiving](#compression-and-archiving)
+    * [Gzip](#gzip)
+    * [Bzip2](#bzip2)
+    * [Tar](#tar)
+* [Links](#links)
+    * [Soft Links](#soft-links)
+    * [Hard Links](#hard-links)
+* [Processes](#processes)
+    * [Find Processes](#find-processes)
+    * [Kill Processes](#kill-processes)
 
 ## Stdout and Stderr
 
@@ -130,3 +139,40 @@ $ tar -xvf backup.tar
 ```
 
 ## Links
+- [Soft Links](#soft-links)
+- [Hard Links](#hard-links)
+
+### Soft Links
+Symbolic link, soft link/symlink, is a special file that serves as a reference to another file or directory.
+Created with the `ln` command and `-s` switch
+```bash
+$ ln -s {source-filename} {symbolic-filename/symbolic-dir-name}
+$ ln -s file1 link1
+```
+
+### Hard Links
+The link is between the filename and the actual data stored on the filesystem. Creating a hard link creates a new filename pointing to the extact same data as the old filename. Changes made to one filename, the other reflects those changes. The permissions, link count, owenership, time stamps, and file content are the exact same, data is only removed from your drive when all links to the data have been removed
+```bash
+$ ln {source-filename} {symbolic-filename/dir-name}
+$ ln link_test /tmp/link_new
+```
+
+## Processes
+- [Find Processes](#find-processes)
+- [Kill Processes](#kill-processes)
+
+### Find Processes
+A PID is auto assigned to each process when it is created.
+
+You can use `pidof` or `ps` command to get the process PID. The command `pidof` finds a runnig process by name while `ps` displays information about processes while `ps aux` displays all running processes, shows user/owner column in output, and prints the processes that have not been executed from the terminal.
+```
+$ pidof httpd
+$ ps aux | grep httpd 
+```
+
+### Kill Processes
+Can kill a process with either `kill` or `killall`. The `kill` ends a process using it's PID while `killall` ends a process by the process's name.
+```
+$ kill {PID}
+$ killall {Process-Name}
+```
