@@ -14,6 +14,8 @@
 * [Processes](#processes)
     * [Find Processes](#find-processes)
     * [Kill Processes](#kill-processes)
+* [Logs](#logs)
+* [Reset Root Password](#reset-root-password)]]
 
 ## Stdout and Stderr
 
@@ -175,4 +177,48 @@ Can kill a process with either `kill` or `killall`. The `kill` ends a process us
 ```
 $ kill {PID}
 $ killall {Process-Name}
+```
+
+## Logs
+
+The `/etc/rsyslog.conf` stores all the log locations for the different logs.
+
+The `journalctl` command is used to view the systemd, kernel, and journal logs, which displays the oldest entries first.
+
+You can set `journalctl` to store logs persisently by either creating the following directory
+```
+$ mkdir -p /var/log/journal
+```
+Or by by editing the `systemd-journald` configuratin file and seting Storage=auto to Storage=persistent
+```bash
+$ vim /etc/systemd/journald.conf
+$ #Storage=auto > Storage=persistent
+```
+
+## Reset Root Password
+
+Reboot the system and on GRUB2 boot screen, press `e` key to interrupt the boot process.
+
+At the end of the line that begins with *linux* add `rd.break` to the end of the line
+```bash
+linux ($root)/vmlinuz-4.18.0-80.e18.x86_64 root=/dev/mapper/rhel-root ro crash kernel=auto resume=/dev/mapper/rhel-swap rd.lvm.lv/swap rhgb quiet rd.break
+```
+Press `Ctrl+X` to start the system where `switch_root` prompt will appear. Remount the file system as writable
+```
+# mount -o remount,rw /sysroot
+```
+The file system is mounted as read-only in the /sysroot directory. Remounting the file system as writable allows you to change the password. Enter `chroot` environment
+```
+chroot /sysroot
+```
+
+The `sh-4.4#` prompt will appear, reset the root password
+```
+# passwd
+```
+Then enable SELinux relabeling process on the next system boot
+```
+# touch /.autorelabel
+# exit
+$ exit
 ```
