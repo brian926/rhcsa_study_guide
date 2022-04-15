@@ -15,7 +15,12 @@
     * [Find Processes](#find-processes)
     * [Kill Processes](#kill-processes)
 * [Logs](#logs)
-* [Reset Root Password](#reset-root-password)]]
+* [Reset Root Password](#reset-root-password)
+* [Disk Storage](#disk-storage)
+* [Logical Volume Manager](#logical-volume-manager)
+    * [Physical Volumes](#physical-volumes)
+    * [Volume Group](#volume-group)
+    * [Logical Volume](#logical-volume)
 
 ## Stdout and Stderr
 
@@ -222,3 +227,96 @@ Then enable SELinux relabeling process on the next system boot
 # exit
 $ exit
 ```
+## Disk Storage
+The `lsblk` commands allows you to display a list of available block devices, while the `blkid` command allows you to display information about available block devices.
+
+By default it lists all available block devices, to display information about a particular device only then specify the device name
+```
+$ blkid /dev/sdb1
+```
+
+The `fdisk` command suite is a partitioning utility that can list, create, and remove. To format, use the `mkfs` command instead.
+
+List out the partitions of a disk
+```
+$ fdisk -l
+```
+
+Create a new partition by selectng a primary disk that has unused space
+```
+$ fdisk /dev/sdb
+ Welcome to fdisk (util-linux 2.32.1).
+ Changes will remain in memory only until you decide to write them.
+ Be careful before using the write command.
+ 
+ Does not contain a recognized partition table.
+     Created a new DOS disklabel with disk identifier 0x569c5370.
+    
+ Command (m for help): n
+ Partition type
+    p   primary (0 primary, 0 extended, 4 free)
+    e   extended (container for logical partitions)
+ Select (default p): p
+ Partition number (1-4, default 1): 1
+ First sector (2048-2097151, default 2048):
+ Last sector, +sectors or +size{K,M,G,T,P} (2048-2097151, default 2097151): +500
+    
+ Created a new partition 1 of type 'Linux' and of size 250.5 KiB.
+ **Be sure to write your changes to disk using the `w` flag**
+```
+
+Deleting a partition would be same command.
+```
+$ fdisk /dev/sdb
+ Welcome to fdisk (util-linux 2.32.1).
+ Changes will remain in memory only until you decide to write them.
+ Be careful before using the write command.
+    
+ Command (m for help): d
+ Selected partition 1
+ Partition 1 has been deleted.
+```
+## Logical Volume Manager
+- [Physical Volumes](#physical-volumes)
+- [Volume Group](#volume-group)
+- [Logical Volume](#logical-volume)
+
+
+```mermaid
+    graph TD;
+        PV1 --> VG1;
+        PV2 --> VG1;
+        PV3 --> VG2;
+        VG1 --> LV;
+        VG2 --> LV;
+```
+
+
+### Physical Volumes
+A physical volume is any physical storage device that has been initialized as a physical volume with LVM.
+LVM places labels on the physical volumes' UUID and metadata storage when initialized.
+Uses the `pvs` command to to see what physical volumes are configured. To add additional PV, use the `pvcreate` command.
+```
+$ pvs
+$ pvcreate /dev/sdb
+```
+
+### Volume Group
+Physical volumes are combined into volume groups (VGs), which creates a pool of disk space out of which logical volumes can be allocated.
+Within a volume group, the disk space available for allocation is divided into units of a fixed-size called extents. An extent is the smallest unit of space that can be allocated. Within a physical volume, extents are referred to as physical extents.
+
+To create a volume group, use `vgcreate` command which wil create a new volume group by name and adds at least one physical volume to it.
+
+```
+$ vgcreate vg1 /dev/sdb1
+```
+
+Use the `vgs` command to view existing volume groups. To add additional physical volumes to an existing volume gorup, use `vgextend` command. And to remove the physical volume, uses the `vgreduce` command.
+
+```
+$ vgextend vg1 /dev/sdc1
+$ vgreduce vg1 /dev/sdb1
+```
+
+### Logical Volume
+Logical volumes are made up of volume groups.
