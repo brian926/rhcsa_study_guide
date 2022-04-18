@@ -1,5 +1,7 @@
 # RHCSA Study Guide
 
+Quick study guide to help me study before the RHCSA exam!
+
 ### Table of Contents
 * [Stdout and Stderr](#stdour-and-stderr)
 * [Bash](#bash)
@@ -21,6 +23,12 @@
     * [Physical Volumes](#physical-volumes)
     * [Volume Group](#volume-group)
     * [Logical Volume](#logical-volume)
+* [Network Files System (NFS)](#network-file-system-nfs)
+    * [AutoFS](#autofs)
+* [Linux Permissions](#linux-permissions)
+    * [Special Permissions](#special-permissions)
+    * [Access Control Lists](#access-control-lists)
+* [Mounting Stratis File System](#mounting-stratis-file-system)
 
 ## Stdout and Stderr
 
@@ -320,3 +328,134 @@ $ vgreduce vg1 /dev/sdb1
 
 ### Logical Volume
 Logical volumes are made up of volume groups.
+
+## Network File System (NFS)
+A *Network File System (NFS) allows remotes hosts to mount file systems over a network and interact with those file systems as though they are mounted locally.
+
+### AutoFS
+The `automount` utlility can mount and umount NFS file systems automatically and can be used to mount other file systems.
+
+`autofs` uses `/etc/auto.master` (master map) as its default primary configuration file.
+
+Direct maps in `autofs` provide a mechanism to automatically mount file systems at arbitrary points in the file system hierarchy. A direct map is denoted by a mount point of `/-` in the master map
+
+The primary configuration file for the automounter is `/etc/auto.master`, the format of the master map is as follows
+```
+{mount-point map-name options}
+/home /etc/auto.misc
+```
+**Mount-point** refers to the `autofs` mount point, this can be a single directory name for an indirect mount of the full path of the mount point for direct mounts.
+
+**Location** refers to the file system location such as a local file system path, an NFS file system, or other valid file system location.
+
+There are two ways to configure exports on an NFS Server
+- Manually editing the NFS configuration file `/etc/exports`
+- Through the command line by using `exportfs`
+
+The `/etc/exports` file controls which file systems are exported to remote hosts and specifies options. Each entry for an exported file system has the following structure
+```
+{exort host(options)}
+/home   server2(rw,no_root_squash)
+```
+**export** The directory being exported
+
+**host** The host or network to which the export is being shared
+
+**options** the options to be used for host
+
+On default `root_squash` is used to prevent root users connected remotely from having root privileges, and instead the NFS server assigns them the user ID `nfsnobody`. The exported file system is default to read-only `ro` as well.
+
+To able asynchronous writes, specify with the option `async`.
+
+NFS requires `rpcbind`, which dynamically assigns ports for RPC services and can cause issues for configuring firewall rules, to allow clients to access NFS shares behind a firewall, allow access through firewall.
+```
+$ firewall-cmd --permanent --add-service=rpc-bind
+```
+When the nfs service starts, the /usr/sbin/exportfs command launches and reads this file, passes control to `rpc.mountd`
+
+Allow `mountd` through the firewall,
+```
+$ firewall-cmd --permanent --add-service=mountd
+```
+
+Configuring `autofs` service to mount user home directories automatically.
+- Client needs to use the following `/etc/auto.master` map
+```
+/home   /etc/auto.home
++auto.master
+```
+- The `/etc/auto.home` map contains the entry
+```
+*   server2:/export/home/&
+```
+
+
+## Linux Permissions
+
+- *Read* Numeric 4
+- *Write* Numeric 2
+- *Execute* Numeric 1
+
+### Special Permissions
+Special Permissions allow for additional privileges over the standard permission sets
+
+**SUID**
+
+Special permissions for the user access level. A file with **SUID** always executes as the user who owns the file, regardless of the user passing the command. `u+s`
+
+**SGID**
+
+- if set on a file, allows the file to be executed as the group that owns the file
+- set on a directory, any files created in the directory will have their group ownership set to that of the directory owner. `g+s`
+
+**Sicky Bit**
+
+This permission does not affect individual files but on the directory level it restricts file deletion. Only the owner (and root) can rmeove the file within that directory. `o+t`
+
+**Numerical Value**
+
+To use the numerical method, pass a fourth digit preceding in the `chmod` command
+- Start at 0
+- **SUID** = 4
+- **SGID** = 2
+- **Sticky** = 1
+```
+$ chmod X### file | directory
+$ chmod 2770 /community_content/
+```
+
+### Access Control Lists
+An access ACL is the access control list for a specific file or directory
+
+A default ACL can only be associated with a directory; if a file within the directory does not have an access AC:L, is uses the rules of the default ACL for the directory
+
+The `setfacl` utility sets ACLs for files and directories.
+```
+$ setfacl -m rules files
+```
+
+Rules (rules) must be specified in the following formats. Multiple rules can be specified in the same command if they are separated by commas.
+
+- **u:uid:perms** Sets the access ACL for a user. The user name or UID may be specified. The user may be any valid user on the system.
+- **g:gid:perms** Sets the access ACL for a group. The group name or GID may be specified. The group may be any valid group on the system.
+- **m:perms** Sets the effective rights mask. The mask is the union of all permissions of the owning group and all of the user and group entries.
+- **o:perms** Sets the access ACL for users other than the ones in the group for the file.
+
+Permissions (perms) must be a combination of the characters r, w, and x for read, write, and execute.
+
+To set a default ACL, add `d:` before the rule and specify a directory instead of file name
+```
+$ setfacl -m d:o:rx /share
+```
+
+To determine the existing ACLs for a file or directory, use the `getfacl` command
+```
+$ getfacl home/john/picture.png
+```
+
+## Mounting Stratis File System
+
+When mounting a Stratis File system persistently using `/etc/fstab`, use `xfs` as the file system type and add the `x-systemd.requires=stratisd.service`
+```
+UUID=a1f0b64a-4ebb-4d4e-9543-b1d79f600283 /mnt/fs1 xfs defaults,x-systemd.requires=stratisd.service
+```
