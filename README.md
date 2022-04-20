@@ -29,6 +29,7 @@ Quick study guide to help me study before the RHCSA exam!
     * [Special Permissions](#special-permissions)
     * [Access Control Lists](#access-control-lists)
 * [Mounting Stratis File System](#mounting-stratis-file-system)
+*[Crontab](#crontab)
 
 ## Stdout and Stderr
 
@@ -459,3 +460,30 @@ When mounting a Stratis File system persistently using `/etc/fstab`, use `xfs` a
 ```
 UUID=a1f0b64a-4ebb-4d4e-9543-b1d79f600283 /mnt/fs1 xfs defaults,x-systemd.requires=stratisd.service
 ```
+
+## Crontab
+
+`Crontab` file is a simple text file that instructs the `cron` daemon to perform a task at a certain time or interval. Any user can schedule `cron` tasks or jobs on a system, the task runs under the user account from which it was created
+`crontab` file has a specific syntax to it.
+```
+* * * * * /path/to/script
+Minute (0-59)
+    |
+    Hour (0-23)
+        |
+        Day of month (1-31)
+            |
+            Month of year (1-12)
+                |
+                Day of week (0-7), 0 & 7 are Sunday
+```
+An asterisk (`*`) means every or all, as in every minute or all hours, every day, and so on.
+
+To allow or deny access to specific users, crontab uses the files `/etc/cron.allow` and `/etc/cron.deny`. Based on the existence of `/etc/cron.allow` and `/etc/cron.deny` files, crontab decides whom to give access to cron in following order.
+
+- If `cron.allow` exists – only the users listed in the file `cron.allow` will get an access to crontab.
+- If `cron.allow` does not exist – all users except the users listed into cron.deny can use crontab
+- If neither of the file exists – only the root can use crontab
+- If a user is listed in both `cron.allow` and `cron.deny` – that user can use crontab.
+
+If the `cron.allow` file exists, then you must be listed therein in order to be allowed to use this command. If the cron.allow file does not exist but the `cron.deny` file does exist, then you must not be listed in the `cron.deny` file in order to use this command.
